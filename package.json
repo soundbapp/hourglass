@@ -1,0 +1,22 @@
+{
+  "name": "hourglass-fps",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hourglass — The Eye: Containment Bay. A photorealistic FPS showcase on Three.js r180 / WebGL2.",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:standalone": "vite build --config vite.config.standalone.ts",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": { "three": "0.180.0" },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/three": "0.180.0",
+    "typescript": "5.9.3",
+    "vite": "^8.1.5"
+  }
+}

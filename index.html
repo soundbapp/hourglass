@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Hourglass — The Eye: Containment Bay." />
+    <title>Hourglass — The Eye</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070608'/%3E%3Cpath d='M9 5h14L17 16l6 11H9l6-11z' fill='%23d8a24a'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --ink: #e8e4da;
+        --dim: #6f6a60;
+        --accent: #d8a24a;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #050406;
+        color: var(--ink);
+        font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+        cursor: default;
+      }
+
+      #viewport {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        outline: none;
+      }
+
+      /* ---- HUD ------------------------------------------------------------ */
+      #hud {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 5;
+      }
+
+      #crosshair {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 0;
+        height: 0;
+        transition: opacity 90ms linear;
+      }
+
+      #crosshair i {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+        display: block;
+      }
+
+      #crosshair-top, #crosshair-bottom { width: 2px; height: 7px; left: -1px; }
+      #crosshair-left, #crosshair-right { width: 7px; height: 2px; top: -1px; }
+      #crosshair-top { top: -7px; }
+      #crosshair-bottom { top: 0; }
+      #crosshair-left { left: -7px; }
+      #crosshair-right { left: 0; }
+
+      #crosshair-dot {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        left: -1px;
+        top: -1px;
+        background: rgba(255, 255, 255, 0.55);
+      }
+
+      #ammo {
+        position: absolute;
+        right: 42px;
+        bottom: 34px;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+      }
+
+      #ammo-value { font-size: 42px; font-weight: 600; letter-spacing: 0.02em; }
+      #ammo-total { font-size: 15px; color: var(--dim); }
+
+      #reload-notice {
+        position: absolute;
+        right: 42px;
+        bottom: 14px;
+        font-size: 11px;
+        letter-spacing: 0.26em;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 140ms linear;
+      }
+
+      #controls-hint {
+        position: absolute;
+        left: 28px;
+        bottom: 24px;
+        font-size: 10.5px;
+        line-height: 1.9;
+        letter-spacing: 0.1em;
+        color: var(--dim);
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+        transition: opacity 500ms ease;
+      }
+
+      /* ---- Overlays -------------------------------------------------------- */
+      #boot, #pause {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 18px;
+        text-align: center;
+        background: radial-gradient(circle at 50% 42%, #0e0c10 0%, #050406 72%);
+        transition: opacity 400ms ease;
+      }
+
+      #pause { background: rgba(5, 4, 6, 0.82); backdrop-filter: blur(3px); }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1rem, 2.6vw, 1.45rem);
+        font-weight: 500;
+        letter-spacing: 0.46em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .subtitle {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+
+      #boot-bar { width: min(300px, 56vw); height: 2px; background: #1b1820; overflow: hidden; }
+      #boot-bar > i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width 220ms ease; }
+      #boot-status { min-height: 1.2em; font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+
+      #boot-error {
+        max-width: min(540px, 84vw);
+        font-size: 0.78rem;
+        line-height: 1.7;
+        color: #e2574a;
+        white-space: pre-wrap;
+      }
+
+      .start-button {
+        pointer-events: auto;
+        margin-top: 4px;
+        padding: 13px 30px;
+        border: 1px solid rgba(216, 162, 74, 0.45);
+        background: rgba(216, 162, 74, 0.07);
+        color: var(--accent);
+        font: inherit;
+        font-size: 0.72rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 160ms ease, border-color 160ms ease;
+      }
+
+      .start-button:hover { background: rgba(216, 162, 74, 0.16); border-color: rgba(216, 162, 74, 0.8); }
+
+      .keys {
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 5px 20px;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        color: var(--dim);
+      }
+      .keys b { color: var(--ink); font-weight: 500; text-align: right; }
+
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <canvas id="viewport" tabindex="0"></canvas>
+
+    <div id="hud">
+      <div id="crosshair">
+        <i id="crosshair-top"></i>
+        <i id="crosshair-bottom"></i>
+        <i id="crosshair-left"></i>
+        <i id="crosshair-right"></i>
+        <i id="crosshair-dot"></i>
+      </div>
+      <div id="ammo">
+        <span id="ammo-value">30</span>
+        <span id="ammo-total">/ 30</span>
+      </div>
+      <div id="reload-notice">RELOADING</div>
+      <div id="controls-hint">
+        WASD MOVE · SHIFT SPRINT · CTRL CROUCH · SPACE JUMP<br />
+        LMB FIRE · RMB AIM · R RELOAD · ESC RELEASE CURSOR
+      </div>
+    </div>
+
+    <div id="boot">
+      <h1>The Eye</h1>
+      <p class="subtitle">Containment Bay</p>
+      <div id="boot-bar"><i></i></div>
+      <p id="boot-status">initialising</p>
+      <p id="boot-error" hidden></p>
+      <button id="start-button" class="start-button" hidden>Enter</button>
+    </div>
+
+    <div id="pause" hidden>
+      <h1>Paused</h1>
+      <div class="keys">
+        <b>WASD</b><span>move</span>
+        <b>Shift</b><span>sprint</span>
+        <b>Ctrl / C</b><span>crouch</span>
+        <b>Space</b><span>jump</span>
+        <b>LMB</b><span>fire</span>
+        <b>RMB</b><span>aim</span>
+        <b>R</b><span>reload</span>
+      </div>
+      <button id="resume-button" class="start-button">Resume</button>
+    </div>
+
+    <noscript>
+      <p style="padding: 2rem">This demo requires JavaScript and a WebGL2-capable browser.</p>
+    </noscript>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
